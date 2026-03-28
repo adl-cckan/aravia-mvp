@@ -13,11 +13,10 @@ except Exception as e:
     st.error("❌ Secrets 未正確載入 GEMINI_API_KEY，請檢查 Secrets 設定")
     st.stop()
 
-# 使用最新免費穩定模型
+# 使用目前最穩定免費模型
 model = genai.GenerativeModel(
-    model_name="gemini-1.5-flash-latest",   # 2026年最新免費版
-    generation_config={"temperature": 0.7, "max_output_tokens": 2048},
-    safety_settings={"HARASSMENT": "BLOCK_NONE", "HATE_SPEECH": "BLOCK_NONE"}
+    model_name="gemini-1.5-flash",   # ← 已修正為正確免費模型
+    generation_config={"temperature": 0.7, "max_output_tokens": 2048}
 )
 
 # ====================== Agent Prompts ======================
@@ -74,4 +73,4 @@ with tab2:
             except Exception as e:
                 st.error(f"錯誤：{str(e)}")
 
-st.caption("Gemini 免費版 MVP v2.1 | 已修正 NotFound 錯誤 · 完全免費")
+st.caption("Gemini 免費版 MVP v2.2 | 已修正 model 404 錯誤 · 完全免費")
