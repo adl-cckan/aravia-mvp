@@ -4,26 +4,45 @@ from PIL import Image
 
 st.set_page_config(page_title="Aravia MVP – Kan Intelligence", page_icon="🏛️", layout="wide")
 st.title("🏛️ Aravia Knowledge Platform")
-st.caption("CHAN Ching Kan 20年建築知識 + 2024 CUHK PhD 驅動 | Gemini 免費版（加強詳細版）")
+st.caption("CHAN Ching Kan 20年建築知識 + 2024 CUHK PhD 驅動 | Gemini 加強知識庫版")
 
 genai.configure(api_key=st.secrets["GEMINI_API_KEY"])
 
+# 自動讀取你嘅完整知識庫
+with open("lessons_35.md", "r", encoding="utf-8") as f:
+    lessons_content = f.read()
+with open("keywords.md", "r", encoding="utf-8") as f:
+    keywords_content = f.read()
+
 model = genai.GenerativeModel(
     model_name="gemini-2.5-flash",
-    generation_config={"temperature": 0.7, "max_output_tokens": 4096}  # 已調高令回應更長
+    generation_config={"temperature": 0.7, "max_output_tokens": 4096}
 )
 
-# ====================== 加強版 Prompt ======================
-EXPLAINER_PROMPT = """你係 Kan Explainer。
+# ====================== 超強 Prompt（已注入完整知識庫） ======================
+EXPLAINER_PROMPT = f"""你係 Kan Explainer。
+以下係完整知識庫（必須每次都參考）：
+=== 35 Lessons Learned ===
+{lessons_content}
+=== 21 Keywords ===
+{keywords_content}
+
 請用 Cantonese + English 詳細回答，每個問題都要：
 1. 先簡單總結用戶問題
-2. 用 1-2 句解釋 PhD 核心概念
-3. 明確連結到最相關的 1-3 個 Lessons Learned 同 Keywords
+2. 用 1-2 句解釋 PhD 核心概念（space of appearance、heterotopias、relational topology 等）
+3. 明確連結到最相關的 2-3 個 Lessons + Keywords
 4. 舉 1-2 個 Aravia 真實項目例子
-5. 最後給實戰啟示（對開發商/業主有什麼價值）
-答案必須詳細、有結構、列點清楚，長度至少 300-500 字。"""
+5. 最後給實戰啟示
+答案必須豐富、結構清楚、詳細引用知識庫內容。"""
 
-CRITIC_PROMPT = """你係 Kan Critic。請根據 35 Lessons + 21 Keywords 批判設計圖。
+CRITIC_PROMPT = f"""你係 Kan Critic。
+以下係完整知識庫（必須每次都參考）：
+=== 35 Lessons Learned ===
+{lessons_content}
+=== 21 Keywords ===
+{keywords_content}
+
+請根據以上知識庫批判設計圖。
 輸出格式必須嚴格如下：
 【觀察】
 【核心意圖】
@@ -34,9 +53,9 @@ CRITIC_PROMPT = """你係 Kan Critic。請根據 35 Lessons + 21 Keywords 批判
 用 Cantonese + English 回答，答案必須詳細豐富。"""
 
 with st.sidebar:
-    st.success("✅ Gemini 加強詳細版已連接成功！")
-    st.write("• 35 Lessons + 21 Keywords 已載入")
-    st.caption("回應已加強詳細度")
+    st.success("✅ Gemini 加強知識庫版已連接！")
+    st.write("• 35 Lessons + 21 Keywords 已自動注入")
+    st.caption("深度已大幅提升")
 
 tab1, tab2 = st.tabs(["📖 Kan Explainer（論文解釋）", "🔍 Kan Critic（設計批判）"])
 
@@ -57,7 +76,7 @@ with tab2:
         with st.spinner("Kan Critic 思考中..."):
             if uploaded_file.type.startswith("image"):
                 img = Image.open(uploaded_file)
-                prompt_parts = [CRITIC_PROMPT, f"用戶意圖：{intent}\n請根據 Aravia 35 Lessons + 21 Keywords 批判以上圖則。", img]
+                prompt_parts = [CRITIC_PROMPT, f"用戶意圖：{intent}\n請根據以上知識庫批判以上圖則。", img]
             else:
                 prompt_parts = [CRITIC_PROMPT, f"用戶意圖：{intent}\n（PDF已上傳，請根據內容批判）"]
             response = model.generate_content(prompt_parts)
@@ -66,4 +85,4 @@ with tab2:
             if uploaded_file.type.startswith("image"):
                 st.image(uploaded_file, caption="你上傳的設計圖")
 
-st.caption("Gemini 加強版 MVP v2.5 | 回應已大幅提升詳細度")
+st.caption("Gemini 加強知識庫版 MVP v2.6 | 已注入完整 35 Lessons + 21 Keywords")
