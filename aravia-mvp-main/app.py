@@ -7,10 +7,8 @@ st.set_page_config(page_title="Aravia MVP – Kan Intelligence", page_icon="🏛
 st.title("🏛️ Aravia Knowledge Platform")
 st.caption("CHAN Ching Kan 20年建築知識 + 2024 CUHK PhD 驅動 | 自動化版本")
 
-# 載入 API Key
 client = anthropic.Anthropic(api_key=st.secrets["ANTHROPIC_API_KEY"])
 
-# ====================== 兩個 Agent Prompt ======================
 EXPLAINER_SYSTEM = """You are Kan Explainer. 
 You ONLY explain CHAN Ching Kan’s 2024 CUHK PhD thesis and 35 Lessons Learned.
 Always answer in Cantonese + English.
@@ -24,13 +22,11 @@ Critique any design drawing step-by-step.
 Output format: 【觀察】 【核心意圖】 【Aravia框架評估】 【3個優點】 【3個具體改進建議】 【Aravia總結句】
 Always answer in Cantonese + English."""
 
-# ====================== Sidebar ======================
 with st.sidebar:
     st.success("✅ 自動化連接成功！")
     st.write("• 35 Lessons + 21 Keywords 已載入")
     st.write("• Kan Explainer + Kan Critic 自動運行")
 
-# ====================== Tabs ======================
 tab1, tab2 = st.tabs(["📖 Kan Explainer（論文解釋）", "🔍 Kan Critic（設計批判）"])
 
 with tab1:
@@ -55,7 +51,6 @@ with tab2:
     
     if st.button("開始批判", key="btn2") and uploaded_file and intent:
         with st.spinner("Kan Critic 思考中..."):
-            # 處理圖片
             bytes_data = uploaded_file.getvalue()
             if uploaded_file.type.startswith("image"):
                 media_type = uploaded_file.type
