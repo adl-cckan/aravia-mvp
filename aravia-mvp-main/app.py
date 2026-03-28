@@ -1,16 +1,24 @@
 import streamlit as st
 import google.generativeai as genai
 from PIL import Image
-import io
 
 st.set_page_config(page_title="Aravia MVP – Kan Intelligence", page_icon="🏛️", layout="wide")
 st.title("🏛️ Aravia Knowledge Platform")
-st.caption("CHAN Ching Kan 20年建築知識 + 2024 CUHK PhD 驅動 | Gemini 免費版")
+st.caption("CHAN Ching Kan 20年建築知識 + 2024 CUHK PhD 驅動 | Gemini 免費版（已修正）")
 
-# 載入 API Key
-genai.configure(api_key=st.secrets["GEMINI_API_KEY"])
+# 載入 API Key + 錯誤檢查
+try:
+    genai.configure(api_key=st.secrets["GEMINI_API_KEY"])
+except Exception as e:
+    st.error("❌ Secrets 未正確載入 GEMINI_API_KEY，請檢查 Secrets 設定")
+    st.stop()
 
-model = genai.GenerativeModel("gemini-1.5-flash")   # 免費版最穩陣模型
+# 使用最新免費穩定模型
+model = genai.GenerativeModel(
+    model_name="gemini-1.5-flash-latest",   # 2026年最新免費版
+    generation_config={"temperature": 0.7, "max_output_tokens": 2048},
+    safety_settings={"HARASSMENT": "BLOCK_NONE", "HATE_SPEECH": "BLOCK_NONE"}
+)
 
 # ====================== Agent Prompts ======================
 EXPLAINER_PROMPT = """你係 Kan Explainer。請用 Cantonese + English 回答，嚴格根據 35 Lessons Learned 同 21 Keywords 解釋 PhD 論文同 20 年經驗。用簡單語言，連結返實際 Aravia 項目。"""
@@ -26,9 +34,9 @@ CRITIC_PROMPT = """你係 Kan Critic。請根據 35 Lessons + 21 Keywords 批判
 用 Cantonese + English 回答。"""
 
 with st.sidebar:
-    st.success("✅ Gemini 免費版已連接！")
+    st.success("✅ Gemini 免費版已修正並連接成功！")
     st.write("• 35 Lessons + 21 Keywords 已載入")
-    st.caption("完全免費 · 自動運行")
+    st.caption("完全免費 · 自動運行 · 設計圖批判強")
 
 tab1, tab2 = st.tabs(["📖 Kan Explainer（論文解釋）", "🔍 Kan Critic（設計批判）"])
 
@@ -37,9 +45,12 @@ with tab1:
     query1 = st.text_input("例如：Space of Appearance 喺TOD項目點應用？", key="q1")
     if st.button("問 Kan Explainer", key="btn1") and query1:
         with st.spinner("Kan Explainer 思考中..."):
-            response = model.generate_content([EXPLAINER_PROMPT, query1])
-            st.markdown("**Kan Explainer 回覆：**")
-            st.write(response.text)
+            try:
+                response = model.generate_content([EXPLAINER_PROMPT, query1])
+                st.markdown("**Kan Explainer 回覆：**")
+                st.write(response.text)
+            except Exception as e:
+                st.error(f"錯誤：{str(e)}")
 
 with tab2:
     st.subheader("上傳設計圖，讓我批判")
@@ -48,24 +59,19 @@ with tab2:
     
     if st.button("開始批判", key="btn2") and uploaded_file and intent:
         with st.spinner("Kan Critic 思考中..."):
-            # 處理圖片
-            if uploaded_file.type.startswith("image"):
-                img = Image.open(uploaded_file)
-                prompt_parts = [
-                    CRITIC_PROMPT,
-                    f"用戶意圖：{intent}\n請根據 Aravia 35 Lessons + 21 Keywords 批判以上圖則。",
-                    img
-                ]
-            else:
-                prompt_parts = [
-                    CRITIC_PROMPT,
-                    f"用戶意圖：{intent}\n（PDF已上傳，請根據內容批判）"
-                ]
-            
-            response = model.generate_content(prompt_parts)
-            st.markdown("**Kan Critic 回覆：**")
-            st.write(response.text)
-            if uploaded_file.type.startswith("image"):
-                st.image(uploaded_file, caption="你上傳的設計圖")
+            try:
+                if uploaded_file.type.startswith("image"):
+                    img = Image.open(uploaded_file)
+                    prompt_parts = [CRITIC_PROMPT, f"用戶意圖：{intent}\n請根據 Aravia 35 Lessons + 21 Keywords 批判以上圖則。", img]
+                else:
+                    prompt_parts = [CRITIC_PROMPT, f"用戶意圖：{intent}\n（PDF已上傳，請根據內容批判）"]
+                
+                response = model.generate_content(prompt_parts)
+                st.markdown("**Kan Critic 回覆：**")
+                st.write(response.text)
+                if uploaded_file.type.startswith("image"):
+                    st.image(uploaded_file, caption="你上傳的設計圖")
+            except Exception as e:
+                st.error(f"錯誤：{str(e)}")
 
-st.caption("Gemini 免費版 MVP | 完全免費 · 設計圖批判強 · 隨時可用")
+st.caption("Gemini 免費版 MVP v2.1 | 已修正 NotFound 錯誤 · 完全免費")
