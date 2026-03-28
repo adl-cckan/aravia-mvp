@@ -1,48 +1,45 @@
 import streamlit as st
-import anthropic
-import base64
-from io import BytesIO
+import google.generativeai as genai
+from PIL import Image
+import io
 
 st.set_page_config(page_title="Aravia MVP – Kan Intelligence", page_icon="🏛️", layout="wide")
 st.title("🏛️ Aravia Knowledge Platform")
-st.caption("CHAN Ching Kan 20年建築知識 + 2024 CUHK PhD 驅動 | 自動化版本")
+st.caption("CHAN Ching Kan 20年建築知識 + 2024 CUHK PhD 驅動 | Gemini 免費版")
 
-client = anthropic.Anthropic(api_key=st.secrets["ANTHROPIC_API_KEY"])
+# 載入 API Key
+genai.configure(api_key=st.secrets["GEMINI_API_KEY"])
 
-EXPLAINER_SYSTEM = """You are Kan Explainer. 
-You ONLY explain CHAN Ching Kan’s 2024 CUHK PhD thesis and 35 Lessons Learned.
-Always answer in Cantonese + English.
-Link every answer back to Lessons / Keywords.
-Use simple language."""
+model = genai.GenerativeModel("gemini-1.5-flash")   # 免費版最穩陣模型
 
-CRITIC_SYSTEM = """You are Kan Critic. 
-You are a world-class architectural critic with 20+ years experience + PhD.
-You have full access to 35 Lessons Learned + 21 Keywords.
-Critique any design drawing step-by-step.
-Output format: 【觀察】 【核心意圖】 【Aravia框架評估】 【3個優點】 【3個具體改進建議】 【Aravia總結句】
-Always answer in Cantonese + English."""
+# ====================== Agent Prompts ======================
+EXPLAINER_PROMPT = """你係 Kan Explainer。請用 Cantonese + English 回答，嚴格根據 35 Lessons Learned 同 21 Keywords 解釋 PhD 論文同 20 年經驗。用簡單語言，連結返實際 Aravia 項目。"""
+
+CRITIC_PROMPT = """你係 Kan Critic。請根據 35 Lessons + 21 Keywords 批判設計圖。
+輸出格式必須嚴格如下：
+【觀察】
+【核心意圖】
+【Aravia框架評估】（列 3 個最相關 Keywords + Lesson）
+【3個優點】
+【3個具體改進建議】
+【Aravia總結句】
+用 Cantonese + English 回答。"""
 
 with st.sidebar:
-    st.success("✅ 自動化連接成功！")
+    st.success("✅ Gemini 免費版已連接！")
     st.write("• 35 Lessons + 21 Keywords 已載入")
-    st.write("• Kan Explainer + Kan Critic 自動運行")
+    st.caption("完全免費 · 自動運行")
 
 tab1, tab2 = st.tabs(["📖 Kan Explainer（論文解釋）", "🔍 Kan Critic（設計批判）"])
 
 with tab1:
     st.subheader("問我任何關於PhD論文或20年經驗的問題")
     query1 = st.text_input("例如：Space of Appearance 喺TOD項目點應用？", key="q1")
-    
     if st.button("問 Kan Explainer", key="btn1") and query1:
         with st.spinner("Kan Explainer 思考中..."):
-            response = client.messages.create(
-                model="claude-3-5-sonnet-20241022",
-                max_tokens=2000,
-                system=EXPLAINER_SYSTEM,
-                messages=[{"role": "user", "content": query1}]
-            )
+            response = model.generate_content([EXPLAINER_PROMPT, query1])
             st.markdown("**Kan Explainer 回覆：**")
-            st.write(response.content[0].text)
+            st.write(response.text)
 
 with tab2:
     st.subheader("上傳設計圖，讓我批判")
@@ -51,26 +48,24 @@ with tab2:
     
     if st.button("開始批判", key="btn2") and uploaded_file and intent:
         with st.spinner("Kan Critic 思考中..."):
-            bytes_data = uploaded_file.getvalue()
+            # 處理圖片
             if uploaded_file.type.startswith("image"):
-                media_type = uploaded_file.type
-                image_data = base64.b64encode(bytes_data).decode("utf-8")
-                content = [
-                    {"type": "image", "source": {"type": "base64", "media_type": media_type, "data": image_data}},
-                    {"type": "text", "text": f"用戶意圖：{intent}\n請根據 Aravia 35 Lessons + 21 Keywords 批判以上圖則。"}
+                img = Image.open(uploaded_file)
+                prompt_parts = [
+                    CRITIC_PROMPT,
+                    f"用戶意圖：{intent}\n請根據 Aravia 35 Lessons + 21 Keywords 批判以上圖則。",
+                    img
                 ]
             else:
-                content = f"用戶意圖：{intent}\n（PDF已上傳，請根據內容批判）"
-
-            response = client.messages.create(
-                model="claude-3-5-sonnet-20241022",
-                max_tokens=2500,
-                system=CRITIC_SYSTEM,
-                messages=[{"role": "user", "content": content}]
-            )
+                prompt_parts = [
+                    CRITIC_PROMPT,
+                    f"用戶意圖：{intent}\n（PDF已上傳，請根據內容批判）"
+                ]
+            
+            response = model.generate_content(prompt_parts)
             st.markdown("**Kan Critic 回覆：**")
-            st.write(response.content[0].text)
+            st.write(response.text)
             if uploaded_file.type.startswith("image"):
                 st.image(uploaded_file, caption="你上傳的設計圖")
 
-st.caption("MVP 自動化 v2.0 | 直接呼叫 Claude API")
+st.caption("Gemini 免費版 MVP | 完全免費 · 設計圖批判強 · 隨時可用")
