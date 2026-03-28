@@ -1,0 +1,23 @@
+# Aravia 關鍵設計原則 Keywords (21個 優化版)
+
+- Adaptive Resilience
+- Low-Fidelity Design
+- Agency of Architect
+- Relational Topology
+- Space of Appearance
+- Right to the City
+- Strategic Public Amenities
+- Edge Negotiation
+- Sequential Spatial Experience
+- Porous Interface
+- Functional Topography
+- Design Stewardship
+- Visual Transparency
+- Inclusive Social Zoning
+- Circular Circulation Sequence
+- Layered Spatial Support
+- Urban Momentum
+- Resonant Topography
+- Tactical Spatial Intervention
+- Contextual Integration
+- Historical Continuity
